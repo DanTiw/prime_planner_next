@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { authApi, User, AuthenticationRequest, RegisterRequest, getErrorMessage } from '@/lib/api';
+import { authApi, userApi, User, AuthenticationRequest, RegisterRequest, getErrorMessage } from '@/lib/api';
 
 interface AuthContextType {
   user: User | null;
@@ -45,8 +45,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await authApi.login(credentials);
       localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      setUser(response.user);
+      
+      // Fetch user data after successful login
+      const userData = await userApi.getUserInfo();
+      localStorage.setItem('user', JSON.stringify(userData));
+      setUser(userData);
       router.push('/todos');
     } catch (error) {
       throw new Error(getErrorMessage(error));
@@ -55,11 +58,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (userData: RegisterRequest) => {
     try {
-      const response = await authApi.register(userData);
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      setUser(response.user);
-      router.push('/todos');
+      await authApi.register(userData);
+      // After registration, login with the same credentials
+      await login({ email: userData.email, password: userData.password });
     } catch (error) {
       throw new Error(getErrorMessage(error));
     }

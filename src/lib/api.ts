@@ -39,13 +39,15 @@ api.interceptors.response.use(
 );
 
 // TypeScript Types
+export interface Authority {
+  authority: string;
+}
+
 export interface User {
   id: number;
-  firstName: string;
-  lastName: string;
+  fullName: string;
   email: string;
-  createdAt: string;
-  updatedAt: string;
+  authorities: Authority[];
 }
 
 export interface Todo {
@@ -70,13 +72,18 @@ export interface RegisterRequest {
 
 export interface AuthenticationResponse {
   token: string;
-  user: User;
 }
 
 export interface TodoRequest {
   title: string;
   description: string;
   priority: number;
+}
+
+export interface PasswordUpdateRequest {
+  oldPassword: string;
+  newPassword: string;
+  newPassword2: string;
 }
 
 export interface ApiError {
@@ -92,13 +99,12 @@ export const authApi = {
     return response.data;
   },
 
-  register: async (userData: RegisterRequest): Promise<AuthenticationResponse> => {
-    const response = await api.post<AuthenticationResponse>('/auth/register', userData);
-    return response.data;
+  register: async (userData: RegisterRequest): Promise<void> => {
+    await api.post('/auth/register', userData);
   },
 
   getCurrentUser: async (): Promise<User> => {
-    const response = await api.get<User>('/users/me');
+    const response = await api.get<User>('/users/info');
     return response.data;
   },
 };
@@ -122,6 +128,39 @@ export const todoApi = {
 
   delete: async (id: number): Promise<void> => {
     await api.delete(`/todos/${id}`);
+  },
+};
+
+// User API
+export const userApi = {
+  getUserInfo: async (): Promise<User> => {
+    const response = await api.get<User>('/users/info');
+    return response.data;
+  },
+
+  updatePassword: async (passwordData: PasswordUpdateRequest): Promise<void> => {
+    await api.put('/users/password', passwordData);
+  },
+
+  deleteAccount: async (): Promise<void> => {
+    await api.delete('/users');
+  },
+};
+
+// Admin API
+export const adminApi = {
+  getAllUsers: async (): Promise<User[]> => {
+    const response = await api.get<User[]>('/admin');
+    return response.data;
+  },
+
+  promoteToAdmin: async (userId: number): Promise<User> => {
+    const response = await api.put<User>(`/admin/${userId}/role`);
+    return response.data;
+  },
+
+  deleteUser: async (userId: number): Promise<void> => {
+    await api.delete(`/admin/${userId}`);
   },
 };
 
